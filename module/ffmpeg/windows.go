@@ -87,7 +87,7 @@ func Format(device types.Device) ([]types.Format, error) {
 
 			if strings.HasPrefix(phrase, "pixel_format=") {
 				valid = true
-				format.Codec = phrase[13:]
+				format.InputFormat = phrase[13:]
 			} else if strings.HasPrefix(phrase, "s=") {
 				numbers := strings.Split(phrase[2:], "x")
 
@@ -136,14 +136,13 @@ func MakeExecRaw(device types.Device, format types.Format) *exec.Cmd {
 }
 */
 
-func MakeExecH264(device types.Device, format types.Format) *exec.Cmd {
+func MakeExecH264(device types.Device, format types.Format, codec string) *exec.Cmd {
 	return exec.Command("ffmpeg",
 		"-f", "dshow",
-		//"-input_format", format.Codec,
 		"-video_size", fmt.Sprintf("%dx%d", format.Width, format.Height),
 		"-framerate", fmt.Sprintf("%g", format.Fps),
 		"-i", "video="+device.Name,
-		"-vcodec", "libx264",
+		"-vcodec", codec,
 		"-preset", "ultrafast",
 		"-tune", "zerolatency",
 		"-g", "30", // 키프레임 간격 단축

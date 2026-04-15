@@ -5,8 +5,8 @@ type Device struct {
 }
 
 type Format struct {
-	Codec  string
-	Width  int
-	Height int
-	Fps    float64
+	InputFormat string
+	Width       int
+	Height      int
+	Fps         float64
 }

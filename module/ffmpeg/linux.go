@@ -90,7 +90,7 @@ func Format(device types.Device) ([]types.Format, error) {
 			continue
 		}
 
-		codec := strings.TrimSpace(parts[2])
+		inputFormat := strings.TrimSpace(parts[2])
 		resPart := parts[3]
 
 		matches := resRe.FindAllStringSubmatch(resPart, -1)
@@ -99,10 +99,10 @@ func Format(device types.Device) ([]types.Format, error) {
 			height, _ := strconv.Atoi(match[2])
 
 			formats = append(formats, types.Format{
-				Codec:  codec,
-				Width:  width,
-				Height: height,
-				Fps:    30, // v4l2 list_formats doesn't easily show FPS, defaulting to 30
+				InputFormat: inputFormat,
+				Width:       width,
+				Height:      height,
+				Fps:         30, // v4l2 list_formats doesn't easily show FPS, defaulting to 30
 			})
 		}
 	}
@@ -110,14 +110,14 @@ func Format(device types.Device) ([]types.Format, error) {
 	return formats, nil
 }
 
-func MakeExecH264(device types.Device, format types.Format) *exec.Cmd {
+func MakeExecH264(device types.Device, format types.Format, codec string) *exec.Cmd {
 	return exec.Command("ffmpeg",
 		"-f", "v4l2", // Linux의 비디오 장치 프레임워크
-		"-input_format", format.Codec,
+		"-input_format", format.InputFormat,
 		"-video_size", fmt.Sprintf("%dx%d", format.Width, format.Height),
 		"-framerate", fmt.Sprintf("%g", format.Fps),
 		"-i", device.Name, // Linux는 보통 "/dev/video0" 형태의 경로를 사용합니다
-		"-vcodec", "libx264",
+		"-vcodec", codec,
 		"-preset", "ultrafast",
 		"-tune", "zerolatency",
 		"-g", "30",

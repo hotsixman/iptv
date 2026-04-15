@@ -11,8 +11,8 @@ import (
 	"strconv"
 )
 
-func CaptureFrame(device types.Device, format types.Format, ch chan []byte, bufPacketCount int) {
-	cmd := MakeExecH264(device, format)
+func CaptureFrame(device types.Device, format types.Format, codec string, ch chan []byte, bufPacketCount int) {
+	cmd := MakeExecH264(device, format, codec)
 	cmd.Stderr = os.Stderr
 	stdout, err := cmd.StdoutPipe()
 	if err != nil {
@@ -70,29 +70,34 @@ func CaptureFrame(device types.Device, format types.Format, ch chan []byte, bufP
 	}
 }
 
-func LoadDeviceAndForamtFromEnv() (*types.Device, *types.Format, error) {
+func LoadDeviceAndForamtFromEnv() (*types.Device, *types.Format, string, error) {
 	device := &types.Device{Name: os.Getenv("DEVICE")}
 
 	width, err := strconv.Atoi(os.Getenv("WIDTH"))
 	if err != nil {
-		return nil, nil, err
+		return nil, nil, "", err
 	}
 	height, err := strconv.Atoi(os.Getenv("HEIGHT"))
 	if err != nil {
-		return nil, nil, err
+		return nil, nil, "", err
 	}
 	fps, err := strconv.ParseFloat(os.Getenv("FPS"), 64)
 	if err != nil {
-		return nil, nil, err
+		return nil, nil, "", err
 	}
 	format := &types.Format{
-		Codec:  os.Getenv("CODEC"),
-		Width:  width,
-		Height: height,
-		Fps:    fps,
+		InputFormat: os.Getenv("INPUT_FORMAT"),
+		Width:       width,
+		Height:      height,
+		Fps:         fps,
 	}
 
-	return device, format, nil
+	codec := os.Getenv("CODEC")
+	if codec == "" {
+		codec = "libx264"
+	}
+
+	return device, format, codec, nil
 }
 
 func BufToPng(buf []byte, width int, height int) *image.RGBA {

@@ -30,7 +30,7 @@ func init() {
 }
 
 func main() {
-	device, format, err := ffmpeg.LoadDeviceAndForamtFromEnv()
+	device, format, codec, err := ffmpeg.LoadDeviceAndForamtFromEnv()
 	if err != nil {
 		log.Fatalln(err)
 		return
@@ -39,7 +39,7 @@ func main() {
 	app := server.NewServer()
 	ch := make(chan []byte)
 
-	go ffmpeg.CaptureFrame(*device, *format, ch, 10)
+	go ffmpeg.CaptureFrame(*device, *format, codec, ch, 10)
 	go server.BroadcastStream(app, ch)
 
 	app.Engine.Run(os.Getenv("PORT"))
