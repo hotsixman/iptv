@@ -115,7 +115,7 @@ func MakeExecH264(device types.Device, format types.Format) *exec.Cmd {
 		"-f", "v4l2", // Linux의 비디오 장치 프레임워크
 		"-input_format", format.Codec,
 		"-video_size", fmt.Sprintf("%dx%d", format.Width, format.Height),
-		"-framerate", fmt.Sprintf("%f", format.Fps),
+		"-framerate", fmt.Sprintf("%g", format.Fps),
 		"-i", device.Name, // Linux는 보통 "/dev/video0" 형태의 경로를 사용합니다
 		"-vcodec", "libx264",
 		"-preset", "ultrafast",
@@ -125,6 +125,7 @@ func MakeExecH264(device types.Device, format types.Format) *exec.Cmd {
 		"-flags", "low_delay",
 		"-flush_packets", "1",
 		"-f", "mpegts",
+		"-loglevel", "quiet",
 		"-",
 	)
 }

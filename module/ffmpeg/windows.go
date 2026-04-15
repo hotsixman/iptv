@@ -120,6 +120,7 @@ func Format(device types.Device) ([]types.Format, error) {
 	return formats, nil
 }
 
+/*
 func MakeExecRaw(device types.Device, format types.Format) *exec.Cmd {
 	return exec.Command("ffmpeg",
 		"-f", "dshow",
@@ -133,21 +134,24 @@ func MakeExecRaw(device types.Device, format types.Format) *exec.Cmd {
 		"-",
 	)
 }
+*/
 
-func MakeExecH264(device types.Device, format types.Format) *exec.Cmd{
+func MakeExecH264(device types.Device, format types.Format) *exec.Cmd {
 	return exec.Command("ffmpeg",
 		"-f", "dshow",
+		//"-input_format", format.Codec,
 		"-video_size", fmt.Sprintf("%dx%d", format.Width, format.Height),
-		"-framerate", fmt.Sprintf("%f", format.Fps),
+		"-framerate", fmt.Sprintf("%g", format.Fps),
 		"-i", "video="+device.Name,
 		"-vcodec", "libx264",
 		"-preset", "ultrafast",
 		"-tune", "zerolatency",
-		"-g", "30",              // 키프레임 간격 단축
-		"-fflags", "nobuffer",   // 버퍼링 방지
-		"-flags", "low_delay",   // 저지연 모드
-		"-flush_packets", "1",   // 패킷 즉시 플러시
+		"-g", "30", // 키프레임 간격 단축
+		"-fflags", "nobuffer", // 버퍼링 방지
+		"-flags", "low_delay", // 저지연 모드
+		"-flush_packets", "1", // 패킷 즉시 플러시
 		"-f", "mpegts",
+		"-loglevel", "quiet",
 		"-",
 	)
 }
