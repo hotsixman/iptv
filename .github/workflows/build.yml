@@ -24,12 +24,6 @@ jobs:
     - name: Build Linux (amd64)
       run: CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -a -v -o geep-linux main.go
 
-    - name: Build MacOS (Intel)
-      run: CGO_ENABLED=0 GOOS=darwin GOARCH=amd64 go build -a -v -o geep-macos-amd64 main.go
-
-    - name: Build MacOS (ARM)
-      run: CGO_ENABLED=0 GOOS=darwin GOARCH=arm64 go build -a -v -o geep-macos-arm64 main.go
-
     - name: Build Windows (x64)
       run: CGO_ENABLED=0 GOOS=windows GOARCH=amd64 go build -a -v -o geep-windows-x64.exe main.go
 
@@ -41,8 +35,6 @@ jobs:
       with:
         files: |
           geep-linux
-          geep-macos-amd64
-          geep-macos-arm64
           geep-windows-x64.exe
           geep-windows-x86.exe
           index.html
