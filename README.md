@@ -25,7 +25,7 @@ A high-performance, low-latency video streaming server implemented in Go. It cap
 1. **Download**: Obtain the compiled binary for your OS.
 2. **Environment Setup**: Create a `.env` file in the same directory as the binary.
    ```bash
-   DEVICE=video=Integrated Camera
+   DEVICE=Integrated Camera
    WIDTH=1280
    HEIGHT=720
    FPS=30
@@ -43,7 +43,7 @@ A high-performance, low-latency video streaming server implemented in Go. It cap
 
 | Variable | Description | Example (Windows) | Example (Linux) |
 | :--- | :--- | :--- | :--- |
-| `DEVICE` | Capture device name | `video=Integrated Camera` | `/dev/video0` |
+| `DEVICE` | Capture device name | `Integrated Camera` | `/dev/video0` |
 | `WIDTH` | Video width | `1280` | `1280` |
 | `HEIGHT` | Video height | `720` | `720` |
 | `FPS` | Frames per second | `30` | `30` |
@@ -74,7 +74,7 @@ Go로 구현된 고성능 저지연 비디오 스트리밍 서버입니다. FFmp
 1. **다운로드**: 운영체제에 맞는 빌드된 바이너리 파일을 다운로드합니다.
 2. **환경 설정**: 바이너리와 같은 폴더에 `.env` 파일을 생성하고 설정을 입력합니다.
    ```env
-   DEVICE=video=Integrated Camera
+   DEVICE=Integrated Camera
    WIDTH=1280
    HEIGHT=720
    FPS=30
@@ -92,7 +92,7 @@ Go로 구현된 고성능 저지연 비디오 스트리밍 서버입니다. FFmp
 
 | 변수명 | 설명 | Windows 예시 | Linux 예시 |
 | :--- | :--- | :--- | :--- |
-| `DEVICE` | 캡처 장치 이름 | `video=Integrated Camera` | `/dev/video0` |
+| `DEVICE` | 캡처 장치 이름 | `Integrated Camera` | `/dev/video0` |
 | `WIDTH` | 비디오 너비 | `1280` | `1280` |
 | `HEIGHT` | 비디오 높이 | `720` | `720` |
 | `FPS` | 초당 프레임 수 | `30` | `30` |
