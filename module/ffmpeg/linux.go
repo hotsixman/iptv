@@ -111,15 +111,44 @@ func Format(device types.Device) ([]types.Format, error) {
 }
 
 func MakeExecH264(device types.Device, format types.Format, codec string) *exec.Cmd {
-	return exec.Command("ffmpeg",
-		"-f", "v4l2", // Linux의 비디오 장치 프레임워크
-		"-input_format", format.InputFormat,
+	args := []string{
+		"-f", "v4l2",
+	}
+
+	// 입력 포맷이 지정되어 있다면 추가 (mjpeg, yuyv422 등)
+	if format.InputFormat != "" {
+		args = append(args, "-input_format", format.InputFormat)
+	}
+
+	args = append(args,
 		"-video_size", fmt.Sprintf("%dx%d", format.Width, format.Height),
 		"-framerate", fmt.Sprintf("%g", format.Fps),
-		"-i", device.Name, // Linux는 보통 "/dev/video0" 형태의 경로를 사용합니다
+		"-i", device.Name,
 		"-vcodec", codec,
-		"-preset", "ultrafast",
-		"-tune", "zerolatency",
+	)
+
+	// 코덱별 최적 프리셋 설정
+	if strings.Contains(codec, "nvenc") {
+		args = append(args,
+			"-preset", "p1", // 최저 지연
+			"-rc", "vbr",
+			"-cq", "28",
+			"-delay", "0",
+		)
+	} else if strings.Contains(codec, "vaapi") {
+		args = append(args, "-compression_level", "1")
+	} else if strings.Contains(codec, "qsv") {
+		args = append(args, "-preset", "veryfast")
+	} else if strings.Contains(codec, "v4l2m2m") || strings.Contains(codec, "omx") {
+		// ARM 하드웨어 가속 (v4l2m2m, omx)는 일반적인 -preset 옵션을 지원하지 않음
+		// 추가 설정이 필요하다면 여기에 작성 (보통 기본값으로도 충분히 빠름)
+		args = append(args, "-num_capture_buffers", "16")
+	} else {
+		// 소프트웨어 인코더 (libx264 등)
+		args = append(args, "-preset", "ultrafast", "-tune", "zerolatency")
+	}
+
+	args = append(args,
 		"-g", "30",
 		"-fflags", "nobuffer",
 		"-flags", "low_delay",
@@ -128,4 +157,6 @@ func MakeExecH264(device types.Device, format types.Format, codec string) *exec.
 		"-loglevel", "quiet",
 		"-",
 	)
+
+	return exec.Command("ffmpeg", args...)
 }

@@ -137,20 +137,45 @@ func MakeExecRaw(device types.Device, format types.Format) *exec.Cmd {
 */
 
 func MakeExecH264(device types.Device, format types.Format, codec string) *exec.Cmd {
-	return exec.Command("ffmpeg",
+	args := []string{
 		"-f", "dshow",
+	}
+
+	// 입력 포맷이 지정되어 있다면 추가 (예: mjpeg, yuyv422 등)
+	if format.InputFormat != "" {
+		args = append(args, "-pixel_format", format.InputFormat)
+	}
+
+	args = append(args,
 		"-video_size", fmt.Sprintf("%dx%d", format.Width, format.Height),
 		"-framerate", fmt.Sprintf("%g", format.Fps),
 		"-i", "video="+device.Name,
 		"-vcodec", codec,
-		"-preset", "ultrafast",
-		"-tune", "zerolatency",
-		"-g", "30", // 키프레임 간격 단축
-		"-fflags", "nobuffer", // 버퍼링 방지
-		"-flags", "low_delay", // 저지연 모드
-		"-flush_packets", "1", // 패킷 즉시 플러시
+	)
+
+	// 코덱별 최적 프리셋 설정
+	if strings.Contains(codec, "nvenc") {
+		args = append(args,
+			"-preset", "p1", // 최저 지연/최고 속도
+			"-rc", "vbr",
+			"-cq", "28", // 화질과 압축률 균형
+			"-delay", "0",
+		)
+	} else if strings.Contains(codec, "qsv") {
+		args = append(args, "-preset", "veryfast")
+	} else {
+		args = append(args, "-preset", "ultrafast", "-tune", "zerolatency")
+	}
+
+	args = append(args,
+		"-g", "30", // 키프레임 간격
+		"-fflags", "nobuffer",
+		"-flags", "low_delay",
+		"-flush_packets", "1",
 		"-f", "mpegts",
 		"-loglevel", "quiet",
 		"-",
 	)
+
+	return exec.Command("ffmpeg", args...)
 }
