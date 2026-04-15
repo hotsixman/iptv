@@ -14,31 +14,40 @@ This project is a low-latency video streaming server implemented in Go. It captu
 - **Server Module (`module/server/`)**:
     - **Gin Web Framework**: Serves a static `index.html` and provides a `/ws` WebSocket endpoint.
     - **WebSocket Broadcasting**: Uses `BroadcastStream` to pull data from the capture channel and push it to all connected WebSocket clients.
-    - **Security**: Implements a simple API key check (`x-api-key` header) during the WebSocket handshake.
-- **Types (`module/types/`)**: Shared data structures like `Device` and `Format`.
+    - **Security**: Implements a two-step authentication system. 
+    1.  `POST /auth`: Client sends an `x-api-key` header matching the `API_KEY` environment variable. The server returns a one-time 16-byte random ticket.
+    2.  `GET /ws?ticket=...`: Client connects via WebSocket using the issued ticket. The ticket is immediately invalidated upon use.
+- **Types (`module/types/`)**: Shared data structures like `Device` and `Format` used across `ffmpeg` and `main.go`.
 
 ### Frontend (HTML/JS)
 - **`index.html`**:
-    - Uses **mpegts.js** for playing the MPEG-TS stream in the browser via Media Source Extensions (MSE).
-    - **Latency Management**: Periodically checks the video buffer. If the delay exceeds 1 second, it jumps the `currentTime` forward to minimize lag.
+    - **Authentication UI**: A password-style input for the `API_KEY` that triggers the `/auth` request.
+    - **Streaming Player**: Uses **mpegts.js** for playing the MPEG-TS stream in the browser via Media Source Extensions (MSE).
+    - **Latency Management**: Periodically (every 3 seconds) checks the video buffer. If the delay (`buffered.end - currentTime`) exceeds 1 second, it jumps the `currentTime` to `end - 0.2` to maintain real-time playback.
     - **Statistics**: Calculates and displays real-time FPS and bitrate using `mpegts.Events.STATISTICS_INFO` and the browser's `VideoPlaybackQuality` API.
 
 ## 3. Key Components and Logic
 - **`CaptureFrame` in `module/ffmpeg/common.go`**:
     - This is the heart of the data pipeline. It manages a buffer of 188-byte packets (MPEG-TS standard).
     - It uses a channel (`chan []byte`) with a buffer size (default 100) to decouple capture from distribution.
-    - If the channel is full, it drops the oldest packet to maintain low latency.
-- **WebSocket Handshake**:
-    - The server checks for an `x-api-key` header against the `API_KEY` environment variable.
+    - **Sync Byte Detection**: To handle potential stream corruption, it looks for the MPEG-TS sync byte (`0x47`). If it doesn't find it, it scans the stream until it finds the next one.
+    - **Latency Handling**: If the distribution channel is full, it drops the oldest packet before pushing the new one. This ensures that only the latest frames are queued for broadcasting.
+- **`BroadcastStream` in `module/server/server.go`**:
+    - Continuously pulls data from the channel and iterates over all connected WebSocket clients to push the binary data.
+    - Automatically removes clients if a write operation fails.
 
 ## 4. Configuration
 The application is configured via environment variables (usually in a `.env` file):
-- `DEVICE`: The name of the capture device.
+- `DEVICE`: The name of the capture device (e.g., `video=Integrated Camera` on Windows, `/dev/video0` on Linux).
 - `WIDTH`, `HEIGHT`, `FPS`: Video parameters.
-- `API_KEY`: Secret for WebSocket authentication.
+- `CODEC`: The FFmpeg encoder codec (e.g., `libx264`, `h264_nvenc`).
+- `API_KEY`: Secret for authentication.
 - `PORT`: Server port (default 3000).
+- `ORIGIN`: Optional. If set, restricts WebSocket connections to the specified origin.
 
-## 5. Potential Improvements
-- **Dynamic Device Selection**: Currently, the device name is hardcoded in `.env`. A discovery API could be added.
-- **Improved Security**: Moving beyond a simple API key in the header, perhaps using JWT or more robust session management.
-- **Transcoding Options**: Adding support for different bitrates or resolutions on the fly.
+## 5. Build and Deployment
+- **`build.yml` (.github/workflows)**: Automates building for multiple platforms (Windows, Linux, Darwin) on push/PR to the `main` branch.
+- **Environment Setup**: Requires FFmpeg to be installed and available in the system's `PATH`.
+- **Operating Systems**: 
+    - **Windows**: Uses `dshow` for device capture.
+    - **Linux**: Uses `v4l2` for device capture.
